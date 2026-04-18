@@ -1,8 +1,3 @@
-## 💻 Machine Learning Implementation
-
-This section contains the core logic used to train and evaluate the three models. I used a split-test approach (80% training, 20% testing) to ensure the models generalize well to new customer data.
-
-```python
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -10,32 +5,32 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 
-# Assuming 'df' is the cleaned banking dataset
+# 1. Prepare Features and Target
 X = df.drop('Loan_Status', axis=1)
 y = df['Loan_Status']
 
-# Splitting the data
+# 2. Split Data (80% Train, 20% Test)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 1. Logistic Regression
-log_reg = LogisticRegression(max_iter=1000)
-log_reg.fit(X_train, y_train)
-log_train_acc = accuracy_score(y_train, log_reg.predict(X_train)) * 100
-log_test_acc = accuracy_score(y_test, log_reg.predict(X_test)) * 100
+# --- MODEL 1: LG (Logistic Regression) ---
+lg = LogisticRegression(max_iter=1000)
+lg.fit(X_train, y_train)
+lg_train_acc = accuracy_score(y_train, lg.predict(X_train)) * 100
+lg_test_acc = accuracy_score(y_test, lg.predict(X_test)) * 100
 
-# 2. Random Forest
-rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_clf.fit(X_train, y_train)
-rf_train_acc = accuracy_score(y_train, rf_clf.predict(X_train)) * 100
-rf_test_acc = accuracy_score(y_test, rf_clf.predict(X_test)) * 100
+# --- MODEL 2: RF (Random Forest) ---
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+rf_train_acc = accuracy_score(y_train, rf.predict(X_train)) * 100
+rf_test_acc = accuracy_score(y_test, rf.predict(X_test)) * 100
 
-# 3. XGBoost
-xgb_clf = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
-xgb_clf.fit(X_train, y_train)
-xgb_train_acc = accuracy_score(y_train, xgb_clf.predict(X_train)) * 100
-xgb_test_acc = accuracy_score(y_test, xgb_clf.predict(X_test)) * 100
+# --- MODEL 3: XGB (XGBoost) ---
+xgb = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+xgb.fit(X_train, y_train)
+xgb_train_acc = accuracy_score(y_train, xgb.predict(X_train)) * 100
+xgb_test_acc = accuracy_score(y_test, xgb.predict(X_test)) * 100
 
-# Results Summary
-print(f"Logistic Regression: Train {log_train_acc:.2f}%, Test {log_test_acc:.2f}%")
-print(f"Random Forest: Train {rf_train_acc:.2f}%, Test {rf_test_acc:.2f}%")
-print(f"XGBoost: Train {xgb_train_acc:.2f}%, Test {xgb_test_acc:.2f}%")
+# 3. Final Results Summary
+print(f"LG: Train {lg_train_acc:.2f}%, Test {lg_test_acc:.2f}%")
+print(f"RF: Train {rf_train_acc:.2f}%, Test {rf_test_acc:.2f}%")
+print(f"XGB: Train {xgb_train_acc:.2f}%, Test {xgb_test_acc:.2f}%")
