@@ -1,36 +1,38 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, MinMaxScaler
+from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score
+import pickle
 
 # 1. Prepare Features and Target
-X = df.drop('Loan_Status', axis=1)
-y = df['Loan_Status']
+X = df.drop(['loan'], axis=1)
+y = df['loan'].replace({'no': 0, 'yes': 1})
 
-# 2. Split Data (80% Train, 20% Test)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 2. Define Column Transformer
+ct = ColumnTransformer([
+    ('ohe', OneHotEncoder(handle_unknown='ignore', sparse_output=False), ['job']),
+    ('ord', OrdinalEncoder(categories=[
+        ['divorced', 'married', 'single'],
+        ['secondary', 'primary', 'tertiary', 'unknown'],
+        ['no', 'yes'],
+        ['no', 'yes']
+    ]), ['marital', 'education', 'default', 'housing']),
+    ('num', MinMaxScaler(), ['age', 'balance', 'loan stats', 'Loan_period'])
+], remainder='passthrough')
 
-# --- MODEL 1: LG (Logistic Regression) ---
-lg = LogisticRegression(max_iter=1000)
-lg.fit(X_train, y_train)
-lg_train_acc = accuracy_score(y_train, lg.predict(X_train)) * 100
-lg_test_acc = accuracy_score(y_test, lg.predict(X_test)) * 100
+# 3. Create the Final Pipeline (Example with LG)
+pipe = Pipeline([
+    ('ct', ct),
+    ('ct4', SelectKBest(score_func=chi2, k=12)),
+    ('lgr', LogisticRegression(max_iter=1000))
+])
 
-# --- MODEL 2: RF (Random Forest) ---
-rf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf.fit(X_train, y_train)
-rf_train_acc = accuracy_score(y_train, rf.predict(X_train)) * 100
-rf_test_acc = accuracy_score(y_test, rf.predict(X_test)) * 100
-
-# --- MODEL 3: XGB (XGBoost) ---
-xgb = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
-xgb.fit(X_train, y_train)
-xgb_train_acc = accuracy_score(y_train, xgb.predict(X_train)) * 100
-xgb_test_acc = accuracy_score(y_test, xgb.predict(X_test)) * 100
-
-# 3. Final Results Summary
-print(f"LG: Train {lg_train_acc:.2f}%, Test {lg_test_acc:.2f}%")
-print(f"RF: Train {rf_train_acc:.2f}%, Test {rf_test_acc:.2f}%")
-print(f"XGB: Train {xgb_train_acc:.2f}%, Test {xgb_test_acc:.2f}%")
+# 4. Train and Export
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=43)
+pipe.fit(X_train, y_train)
+pickle.dump(pipe, open('pipe.pkl', 'wb'))
